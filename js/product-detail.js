@@ -1,0 +1,459 @@
+// Product Detail Page JavaScript
+
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('Product Detail Page Initializing...');
+
+    // 0. Verify Data Availability
+    if (typeof productsData === 'undefined') {
+        console.error('CRITICAL: productsData is undefined. main.js might not be loaded.');
+        alert('System Error: Product data not loaded. Please refresh or contact support.');
+        return;
+    }
+
+    // 1. Get Product ID from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const rawId = urlParams.get('id');
+    const productId = parseInt(rawId);
+
+    console.log(`URL ID: ${rawId}, Parsed ID: ${productId}`);
+
+    // HIDE STATIC CONTENT to strictly prevent default data from showing
+    const detailSection = document.getElementById('productInfoDetail');
+    const errorSection = document.getElementById('productNotFoundError');
+    if (detailSection) detailSection.style.visibility = 'hidden';
+    if (errorSection) errorSection.style.display = 'none';
+
+    if (!rawId) {
+        console.warn('No Product ID in URL.');
+        if (errorSection) errorSection.style.display = 'block';
+        return;
+    }
+
+    // 2. Find Product in Global Data
+    const product = productsData.find(p => p.id == productId);
+
+    if (product) {
+        console.log('Product Found:', product);
+
+        // 3. Update Visuals
+        document.title = `${product.title} | Anne's Fashion Line`;
+
+        // Main Image
+        const mainImage = document.getElementById('mainProductImage');
+        if (mainImage) {
+            mainImage.src = product.image;
+            mainImage.alt = product.title;
+        }
+
+        // Thumbnails
+        const thumbContainer = document.getElementById('thumbnailContainer');
+        if (thumbContainer) {
+            thumbContainer.innerHTML = ''; // Clear
+            // For now, we use the main image as a thumbnail. 
+            // In a real CMS, this would be an array: product.galleryImages
+            const images = [product.image];
+            images.forEach((imgSrc, index) => {
+                const img = document.createElement('img');
+                img.src = imgSrc;
+                img.alt = `View ${index + 1}`;
+                img.className = `thumbnail ${index === 0 ? 'active' : ''}`;
+                img.addEventListener('click', () => {
+                    document.querySelectorAll('.thumbnail').forEach(t => t.classList.remove('active'));
+                    img.classList.add('active');
+                    if (mainImage) mainImage.src = imgSrc;
+                });
+                thumbContainer.appendChild(img);
+            });
+        }
+
+        // Text Content
+        const titleEl = document.querySelector('.product-title-main');
+        if (titleEl) titleEl.textContent = product.title;
+
+        const priceEl = document.querySelector('.product-price-main');
+        if (priceEl) priceEl.textContent = product.price;
+
+        const descEl = document.querySelector('.product-description');
+        if (descEl) {
+            descEl.textContent = product.description || `Shop the exclusive ${product.title} from our ${product.category} collection. Premium quality and style, curated just for you.`;
+        }
+
+        // Dynamic Sizes
+        const sizeContainer = document.getElementById('sizeSelector');
+        if (sizeContainer && product.sizes) {
+            sizeContainer.innerHTML = ''; // Clear hardcoded
+            product.sizes.forEach((size, index) => {
+                const btn = document.createElement('button');
+                btn.className = `size-btn ${index === 0 ? 'active' : ''}`;
+                btn.textContent = size;
+                btn.addEventListener('click', () => {
+                    sizeContainer.querySelectorAll('.size-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                });
+                sizeContainer.appendChild(btn);
+            });
+        }
+
+        // Dynamic Colors
+        const colorContainer = document.getElementById('colorSelector');
+        if (colorContainer && product.colors) {
+            colorContainer.innerHTML = ''; // Clear hardcoded
+            product.colors.forEach((color, index) => {
+                const btn = document.createElement('button');
+                btn.className = `color-btn ${index === 0 ? 'active' : ''}`;
+                btn.style.backgroundColor = color.toLowerCase();
+                btn.title = color;
+                btn.addEventListener('click', () => {
+                    colorContainer.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                });
+                colorContainer.appendChild(btn);
+            });
+        }
+
+        // Breadcrumbs
+        const breadcrumbCategory = document.querySelector('#productBreadcrumb a:nth-child(2)');
+        const breadcrumbTitle = document.querySelector('#productBreadcrumb span');
+
+        if (breadcrumbCategory) {
+            breadcrumbCategory.textContent = product.category.charAt(0).toUpperCase() + product.category.slice(1);
+            breadcrumbCategory.href = `${product.category}.html`;
+        }
+        if (breadcrumbTitle) breadcrumbTitle.textContent = product.title;
+
+        // Meta
+        const metaContainer = document.getElementById('productMeta');
+        if (metaContainer) {
+            metaContainer.innerHTML = `
+                <p><strong>SKU:</strong> LK-${product.category.substring(0, 2).toUpperCase()}-${product.id}</p>
+                <p><strong>Category:</strong> ${product.category.charAt(0).toUpperCase() + product.category.slice(1)}</p>
+            `;
+        }
+
+        // Update "Add to Wardrobe" Button Logic
+        const addBtn = document.querySelector('.btn-add-to-cart');
+        if (addBtn) {
+            const newBtn = addBtn.cloneNode(true);
+            addBtn.parentNode.replaceChild(newBtn, addBtn);
+            newBtn.addEventListener('click', () => {
+                if (typeof addToWardrobe === 'function') {
+                    addToWardrobe(product.id);
+                } else {
+                    console.log('Add to Wardrobe: ', product.title);
+                }
+            });
+        }
+
+        // REVEAL CONTENT: Data loaded successfully
+        if (detailSection) detailSection.style.visibility = 'visible';
+
+    } else {
+        console.error(`Product ID ${productId} NOT found in catalog.`);
+        if (errorSection) errorSection.style.display = 'block';
+    }
+
+    // 4. Load Related Products (Random selection excluding current)
+    // 4. Load Related Products (2 Products + 1 Video)
+    const relatedProducts = document.getElementById('relatedProducts');
+    if (relatedProducts) {
+        relatedProducts.innerHTML = ''; // Clear hardcoded defaults
+
+        // Social Videos Source
+        const socialVideos = [
+            { type: 'social', videoUrl: 'assets/instagram/videos/Lifestyle Casual.mp4', likes: '1.2K', comments: '234' },
+            { type: 'social', videoUrl: 'assets/instagram/videos/Weekend Lifestyle.mp4', likes: '890', comments: '156' },
+            { type: 'social', videoUrl: 'assets/instagram/videos/Dresses.mp4', likes: '2.1K', comments: '345' },
+            { type: 'social', videoUrl: 'assets/instagram/videos/Casual Weekend Club.mp4', likes: '1.5K', comments: '289' },
+            { type: 'social', videoUrl: 'assets/instagram/videos/Heels Casual Date Club.mp4', likes: '3.2K', comments: '420' },
+            { type: 'social', videoUrl: 'assets/instagram/videos/Jeans Casual Weekend.mp4', likes: '1.8K', comments: '190' }
+        ];
+
+        // Filter out current product
+        const availableProducts = productsData.filter(p =>
+            p.type === 'product' && p.id !== productId
+        );
+
+        // Pick 2 Random Products
+        const shuffledProducts = availableProducts.sort(() => 0.5 - Math.random());
+        const selectedProducts = shuffledProducts.slice(0, 2);
+
+        // Pick 1 Random Video
+        const randomVideo = socialVideos[Math.floor(Math.random() * socialVideos.length)];
+
+        // Combine: P, P, V
+        const mix = [...selectedProducts, randomVideo];
+
+        mix.forEach(item => {
+            const card = document.createElement('div');
+
+            if (item.type === 'product') {
+                card.className = 'product-card';
+                card.innerHTML = `
+                    <div class="product-media">
+                        <img src="${item.image}" alt="${item.title}" loading="lazy">
+                    </div>
+                    <div class="product-info">
+                        <h3 class="product-title">${item.title}</h3>
+                        <p class="product-price">${item.price}</p>
+                        <button class="btn-add-cart" onclick="addToWardrobe(${item.id})">
+                            <i class="fas fa-shopping-bag"></i> Add to Wardrobe
+                        </button>
+                    </div>
+                `;
+                // Navigation click
+                card.addEventListener('click', (e) => {
+                    if (!e.target.closest('.btn-add-cart')) {
+                        window.location.href = `product-detail.html?id=${item.id}`;
+                    }
+                });
+            } else {
+                // Video Card
+                card.className = 'product-card social-insert';
+                card.style.gridRow = 'span 1';
+                card.innerHTML = `
+                    <div class="product-media" style="height: 100%;">
+                        <video autoplay muted loop playsinline style="width: 100%; height: 100%; object-fit: cover;">
+                            <source src="${item.videoUrl}" type="video/mp4">
+                        </video>
+                        <div class="social-overlay" style="position: absolute; bottom: 10px; left: 10px; z-index: 2;">
+                            <div class="social-engagement" style="color: white; text-shadow: 0 1px 3px rgba(0,0,0,0.5);">
+                                <span style="margin-right: 15px;"><i class="fas fa-heart"></i> ${item.likes}</span>
+                                <span><i class="fas fa-comment"></i> ${item.comments}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            relatedProducts.appendChild(card);
+        });
+    }
+});
+
+// UI Interactions (Thumbnail, Size, Color, etc.)
+// ==============================================
+
+// Thumbnail Image Switching
+const thumbnails = document.querySelectorAll('.thumbnail');
+const mainImage = document.getElementById('mainProductImage');
+
+thumbnails.forEach(thumb => {
+    thumb.addEventListener('click', () => {
+        thumbnails.forEach(t => t.classList.remove('active'));
+        thumb.classList.add('active');
+        if (mainImage) mainImage.src = thumb.src;
+    });
+});
+
+// Size Selection
+document.querySelectorAll('.size-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+    });
+});
+
+// Color Selection
+document.querySelectorAll('.color-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+    });
+});
+
+// Tone Selection
+document.querySelectorAll('.tone-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.tone-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        // NO AUTO-UPDATE: Wait for Generate click
+    });
+});
+
+// Body Type Selection
+document.querySelectorAll('.body-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.body-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        // NO AUTO-UPDATE: Wait for Generate click
+    });
+});
+
+// Putter.js + NanoBanana Integration
+function updateTryOnPreview() {
+    const previewArea = document.getElementById('previewArea');
+    const generateBtn = document.getElementById('generateBtn');
+
+    const activeTone = document.querySelector('.tone-btn.active')?.dataset.tone || 'light';
+    const activeBodyType = document.querySelector('.body-btn.active')?.dataset.type || 'B';
+    const productName = document.querySelector('.product-title-main')?.textContent || 'Product';
+    const productImg = document.getElementById('mainProductImage')?.src || '';
+
+    if (!previewArea || !generateBtn) return;
+
+    // Show loading state
+    generateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+    generateBtn.disabled = true;
+    previewArea.classList.add('loading');
+
+    // Simulate NanoBanana generation (Putter.js wrap)
+    // In a real environment, this would call:
+    // Putter.nanoBanana.generate({ prompt: prompt, ... })
+
+    // Body Type Constraints (Prevent Collapsing)
+    let bodyDescription = "";
+    switch (activeBodyType) {
+        case 'A':
+            bodyDescription = "Body Type: PEAR SHAPE. Distinctly wide hips and thighs, significantly wider than the bust. Smaller bust, defined waist.";
+            break;
+        case 'B':
+            bodyDescription = "Body Type: HOURGLASS. Balanced bust and hips, with a very defined, narrow waist. Classic curvy silhouette.";
+            break;
+        case 'C':
+            bodyDescription = "Body Type: RECTANGLE / SOFT E. Fuller midsection/tummy area. Hips and bust are balanced but waist is less defined. Realistic average body.";
+            break;
+        case 'D':
+            bodyDescription = "Body Type: PLUS SIZE / APPLE. Full figure, significantly larger bust and midsection. Thick curves, voluptuous silhouette. NOT thin.";
+            break;
+        default:
+            bodyDescription = "Body Type: AVERAGE. Balanced proportions.";
+    }
+
+    const prompt = `PHOTOREALISTIC FASHION PHOTOGRAPHY. 8k resolution, raw photo, hyperrealistic.
+
+SUBJECT: 
+A confident African woman modeling clothing in a high-end professional studio.
+- Skin Tone: [${activeTone}] matching the requested skin tone.
+- ${bodyDescription} (STRICTLY adhere to this body shape).
+
+ATTIRE:
+Wearing the EXACT product shown in this image: [${productImg}].
+- The clothing must fit the body type naturally and realistically.
+- IF THE PRODUCT IS A DRESS/TOP, SHE MUST BE FULLY CLOTHED.
+- MODEST FASHION.
+
+SETTING:
+Professional fashion studio, neutral beige/grey background, soft cinematic lighting. High fashion editorial look.
+
+NEGATIVE PROMPT (DO NOT GENERATE):
+Cartoon, illustration, anime, drawing, painting, cgi, 3d render, sketch, nudity, naked, topless, sheer, see-through, swimwear, bikini, lingerie, distorted body, bad anatomy, extra limbs, collapsing body types, thin (if Type D requested), skinny (if Type D requested).
+`;
+
+    console.log("Generating with NanoBanana Prompt:", prompt);
+
+    // Call Putter.js (NanoBanana wrapper)
+    Putter.nanoBanana.generate({
+        prompt: prompt,
+        imageElement: document.getElementById('mainProductImage') // Pass the image element for Base64 conversion
+    })
+        .then(result => {
+            if (result.success && result.url) {
+                // Success: Update preview with generated image
+                previewArea.innerHTML = `
+                <div class="generated-wrapper" style="position: relative; width: 100%; height: 100%;">
+                    <img src="${result.url}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 12px;">
+                    <div style="position: absolute; inset: 0; background: rgba(0,0,0,0.2); border-radius: 12px; display: flex; align-items: flex-end; padding: 20px;">
+                        <div style="background: rgba(255,255,255,0.9); padding: 10px; border-radius: 6px; font-size: 0.8rem; color: #333; width: 100%;">
+                            <strong>AI Try-On Active</strong><br>
+                            Tone: ${activeTone} | Body: ${activeBodyType}<br>
+                            Product: ${productName}
+                        </div>
+                    </div>
+                </div>
+            `;
+
+                const previewActions = document.getElementById('previewActions');
+                if (previewActions) previewActions.style.display = 'flex';
+
+                // Trigger AI Chatbot (Anne's Assistant)
+                if (window.fashionBot) {
+                    window.fashionBot.open('try_on_complete', {
+                        productName: productName,
+                        activeBodyType: activeBodyType,
+                        activeTone: activeTone
+                    });
+                }
+            } else {
+                // Fallback or error in success path
+                throw new Error("Generation returned no URL");
+            }
+        })
+        .catch(error => {
+            console.error("AI Generation Error:", error);
+
+            let errorMsg = error.message;
+            let hint = "";
+
+            // Customize message for common local development errors
+            if (errorMsg.includes("Tainted") || errorMsg.includes("toDataURL")) {
+                errorMsg = "Security Block (CORS)";
+                hint = "<br><small><strong>Tip:</strong> If testing locally, open this via <code>http://localhost/Boutique/...</code> (XAMPP) instead of double-clicking the file.</small>";
+            } else if (errorMsg.includes("Failed to fetch")) {
+                errorMsg = "Connection Failed";
+                hint = "<br><small>Check your internet connection or library status.</small>";
+            }
+
+            // Use Fallback Simulation
+            previewArea.innerHTML = `
+            <div class="generated-wrapper" style="position: relative; width: 100%; height: 100%;">
+                <img src="assets/${activeBodyType}.png" style="width: 100%; height: 100%; object-fit: cover; border-radius: 12px; filter: sepia(0.2) saturate(1.2);">
+                <div style="position: absolute; inset: 0; background: rgba(0,0,0,0.2); border-radius: 12px; display: flex; align-items: flex-end; padding: 20px;">
+                    <div style="background: rgba(255,255,255,0.9); padding: 10px; border-radius: 6px; font-size: 0.8rem; color: #333; width: 100%;">
+                         <strong>Preview (Simulation)</strong><br>
+                         <p style="color:var(--accent-gold); font-weight:bold; font-size: 0.8em; margin: 5px 0;">Generation Issue: ${errorMsg}</p>
+                         ${hint}
+                         <div style="margin-top:5px; font-size: 0.75em; opacity: 0.8;">Tone: ${activeTone} | Body: ${activeBodyType}</div>
+                    </div>
+                </div>
+            </div>
+        `;
+            const previewActions = document.getElementById('previewActions');
+            if (previewActions) previewActions.style.display = 'flex';
+        })
+        .finally(() => {
+            generateBtn.innerHTML = '<i class="fas fa-magic"></i> Generate Preview';
+            generateBtn.disabled = false;
+            previewArea.classList.remove('loading');
+        });
+}
+
+// Initial preview on load
+document.addEventListener('DOMContentLoaded', () => {
+    // Wait for product data to be populated first
+    // NO AUTO-GENERATION: User must click "Generate Preview"
+
+    // Attach click listener to Generate Button
+    const generateBtn = document.getElementById('generateBtn');
+    if (generateBtn) {
+        generateBtn.addEventListener('click', updateTryOnPreview);
+    }
+});
+
+// Preview Action Buttons
+document.querySelector('.btn-reset')?.addEventListener('click', () => {
+    updateTryOnPreview();
+});
+
+// Social Share
+document.querySelector('.btn-share')?.addEventListener('click', () => {
+    if (navigator.share) {
+        navigator.share({
+            title: document.title,
+            text: 'Check out this style from Luxe Kenya!',
+            url: window.location.href
+        });
+    } else {
+        alert('Share this link: ' + window.location.href);
+    }
+});
+
+// Wishlist Toggle
+document.querySelector('.btn-wishlist')?.addEventListener('click', function () {
+    const icon = this.querySelector('i');
+    if (icon.classList.contains('far')) {
+        icon.classList.replace('far', 'fas');
+        this.style.color = 'var(--accent-gold)';
+    } else {
+        icon.classList.replace('fas', 'far');
+        this.style.color = '';
+    }
+});

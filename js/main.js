@@ -1,0 +1,313 @@
+// ========================================
+// LUXE KENYA - Main JavaScript
+// ========================================
+
+// Theme Management
+const themeToggle = document.getElementById('themeToggle');
+const html = document.documentElement;
+
+const currentTheme = localStorage.getItem('theme') || 'light';
+html.setAttribute('data-theme', currentTheme);
+if (themeToggle) updateThemeIcon(currentTheme);
+
+if (themeToggle) {
+    themeToggle.addEventListener('click', () => {
+        const theme = html.getAttribute('data-theme');
+        const newTheme = theme === 'light' ? 'dark' : 'light';
+        html.setAttribute('data-theme', newTheme);
+        localStorage.setItem('theme', newTheme);
+        updateThemeIcon(newTheme);
+    });
+}
+
+function updateThemeIcon(theme) {
+    const icon = themeToggle.querySelector('i');
+    if (icon) icon.className = theme === 'light' ? 'fas fa-moon' : 'fas fa-sun';
+
+    // Logo Swap Logic
+    const logoImg = document.getElementById('brandLogo');
+    if (logoImg) {
+        // Use URL-safe paths for "Logo Black.png" and "Logo White.png"
+        // Light Mode -> Black Logo
+        // Dark Mode -> White Logo
+        logoImg.src = theme === 'light' ? 'assets/Logo%20Black.png' : 'assets/Logo%20White.png';
+    }
+}
+
+// Navigation Menu Toggle
+const menuToggle = document.getElementById('menuToggle');
+const sideNav = document.getElementById('sideNav');
+const closeNav = document.getElementById('closeNav');
+
+if (menuToggle && sideNav) {
+    menuToggle.addEventListener('click', () => {
+        sideNav.classList.add('open');
+    });
+}
+
+if (closeNav && sideNav) {
+    closeNav.addEventListener('click', () => {
+        sideNav.classList.remove('open');
+    });
+}
+
+document.addEventListener('click', (e) => {
+    if (sideNav && menuToggle && !sideNav.contains(e.target) && !menuToggle.contains(e.target)) {
+        sideNav.classList.remove('open');
+    }
+});
+
+// Hero Carousel
+const heroCarousel = document.getElementById('heroCarousel');
+const heroSlides = heroCarousel ? heroCarousel.querySelectorAll('.hero-slide') : [];
+const dotsContainer = document.getElementById('carouselDots');
+let currentSlide = 0;
+let carouselInterval;
+
+if (heroCarousel && heroSlides.length > 0 && dotsContainer) {
+    heroSlides.forEach((_, index) => {
+        const dot = document.createElement('span');
+        dot.classList.add('carousel-dot');
+        if (index === 0) dot.classList.add('active');
+        dot.addEventListener('click', () => goToSlide(index));
+        dotsContainer.appendChild(dot);
+    });
+
+    const dots = dotsContainer.querySelectorAll('.carousel-dot');
+
+    function goToSlide(n) {
+        heroSlides[currentSlide].classList.remove('active');
+        dots[currentSlide].classList.remove('active');
+        currentSlide = n;
+        if (currentSlide >= heroSlides.length) currentSlide = 0;
+        if (currentSlide < 0) currentSlide = heroSlides.length - 1;
+        heroSlides[currentSlide].classList.add('active');
+        dots[currentSlide].classList.add('active');
+    }
+
+    function nextSlide() {
+        goToSlide(currentSlide + 1);
+    }
+
+    function startCarousel() {
+        carouselInterval = setInterval(nextSlide, 5000);
+    }
+
+    function stopCarousel() {
+        clearInterval(carouselInterval);
+    }
+
+    startCarousel();
+    heroCarousel.addEventListener('mouseenter', stopCarousel);
+    heroCarousel.addEventListener('mouseleave', startCarousel);
+}
+
+// ========================================
+// Product Data & Grid Generation
+// ========================================
+
+// Note: productsData is now loaded from js/products-data.js
+if (typeof productsData === 'undefined') {
+    console.warn('productsData not found. Ensure js/products-data.js is loaded.');
+}
+
+// 1. Define Social Videos Globally
+window.socialVideos = [
+    { type: 'social', videoUrl: 'assets/instagram/videos/Lifestyle Casual.mp4', likes: '1.2K', comments: '234' },
+    { type: 'social', videoUrl: 'assets/instagram/videos/Weekend Lifestyle.mp4', likes: '890', comments: '156' },
+    { type: 'social', videoUrl: 'assets/instagram/videos/Dresses.mp4', likes: '2.1K', comments: '345' },
+    { type: 'social', videoUrl: 'assets/instagram/videos/Casual Weekend Club.mp4', likes: '1.5K', comments: '289' },
+    { type: 'social', videoUrl: 'assets/instagram/videos/Heels Casual Date Club.mp4', likes: '3.2K', comments: '420' },
+    { type: 'social', videoUrl: 'assets/instagram/videos/Jeans Casual Weekend.mp4', likes: '1.8K', comments: '190' }
+];
+
+// 2. Global Mixing Function (2 Products : 1 Video)
+window.mixContent = function (products, videos) {
+    const productsOnly = products.filter(p => p.type === 'product');
+    let mixedContent = [];
+    let videoIndex = 0;
+
+    for (let i = 0; i < productsOnly.length; i++) {
+        mixedContent.push(productsOnly[i]);
+
+        // Insert video after every 2nd product (index 1, 3, 5...)
+        if ((i + 1) % 2 === 0) {
+            const video = videos[videoIndex % videos.length];
+            mixedContent.push(video);
+            videoIndex++;
+        }
+    }
+    return mixedContent;
+};
+
+// 3. Global Render Function
+window.renderProductGrid = function (container, items) {
+    if (!container) return;
+    container.innerHTML = '';
+
+    items.forEach(item => {
+        const card = document.createElement('div');
+
+        if (item.type === 'product') {
+            card.className = 'product-card';
+            card.innerHTML = `
+                <div class="product-media">
+                    <img src="${item.image}" alt="${item.title}" loading="lazy">
+                </div>
+                <div class="product-info">
+                    <h3 class="product-title">${item.title}</h3>
+                    <p class="product-price">${item.price}</p>
+                    <button class="btn-add-cart">
+                        <i class="fas fa-shopping-bag"></i> Add to Wardrobe
+                    </button>
+                </div>
+            `;
+            // Add click listener to card (but not button)
+            card.addEventListener('click', (e) => {
+                if (!e.target.closest('.btn-add-cart')) {
+                    window.location.href = `product-detail.html?id=${item.id}`;
+                }
+            });
+            // Add click listener to button
+            card.querySelector('.btn-add-cart').addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (window.addToWardrobe) window.addToWardrobe(item.id);
+            });
+
+        } else if (item.type === 'social') {
+            card.className = 'product-card social-insert';
+            // Styling enhancement for video cards in grid
+            card.style.gridRow = 'span 1'; // Maintain grid flow
+            card.innerHTML = `
+                <div class="product-media" style="height: 100%;">
+                    <video autoplay muted loop playsinline style="width: 100%; height: 100%; object-fit: cover;">
+                        <source src="${item.videoUrl}" type="video/mp4">
+                    </video>
+                    <div class="social-overlay" style="position: absolute; bottom: 10px; left: 10px; z-index: 2;">
+                        <div class="social-engagement" style="color: white; text-shadow: 0 1px 3px rgba(0,0,0,0.5);">
+                            <span style="margin-right: 15px;"><i class="fas fa-heart"></i> ${item.likes}</span>
+                            <span><i class="fas fa-comment"></i> ${item.comments}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        container.appendChild(card);
+    });
+};
+
+// Render Products Grid (Homepage)
+const productsGrid = document.getElementById('productsGrid');
+if (productsGrid && typeof productsData !== 'undefined') {
+    const mixedItems = window.mixContent(productsData, window.socialVideos);
+    window.renderProductGrid(productsGrid, mixedItems);
+}
+
+// Render Social Videos Rail (Homepage)
+const socialRail = document.querySelector('.social-rail');
+if (socialRail && typeof productsData !== 'undefined') {
+    socialRail.innerHTML = '';
+    const socialItems = productsData.filter(item => item.type === 'social');
+    socialItems.slice(0, 8).forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'social-video-card';
+        card.innerHTML = `
+            <video autoplay muted loop playsinline>
+                <source src="${item.videoUrl}" type="video/mp4">
+            </video>
+            <div class="social-overlay">
+                <div class="social-engagement">
+                    <button class="like-btn"><i class="fas fa-heart"></i> ${item.likes || '0'}</button>
+                    <button class="comment-btn"><i class="fas fa-comment"></i> ${item.comments || '0'}</button>
+                </div>
+            </div>
+        `;
+        socialRail.appendChild(card);
+    });
+}
+
+// ========================================
+// Wardrobe Functionality
+// ========================================
+let cart = JSON.parse(localStorage.getItem('cart')) || [];
+
+function addToWardrobe(productId) {
+    if (typeof productsData === 'undefined') return;
+    const product = productsData.find(p => p.id == productId);
+    if (product) {
+        cart.push(product);
+        localStorage.setItem('cart', JSON.stringify(cart));
+        updateCartBadge();
+        showNotification('Added to wardrobe!');
+    }
+}
+
+function updateCartBadge() {
+    const badge = document.querySelector('.nav-icon .badge');
+    if (badge) {
+        badge.textContent = cart.length;
+    }
+}
+
+function showNotification(message) {
+    const notification = document.createElement('div');
+    notification.className = 'notification';
+    notification.textContent = message;
+    notification.style.cssText = `
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        background: var(--accent-gold);
+        color: #000;
+        padding: 15px 25px;
+        border-radius: 8px;
+        font-weight: 600;
+        z-index: 10000;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        animation: slideInNotify 0.3s ease;
+    `;
+    document.body.appendChild(notification);
+    setTimeout(() => notification.remove(), 3000);
+}
+
+// ========================================
+// Observers & Effects
+// ========================================
+document.addEventListener('DOMContentLoaded', () => {
+    updateCartBadge();
+
+    // Intersection Observer for animations
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.style.opacity = '1';
+                entry.target.style.transform = 'translateY(0)';
+            }
+        });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('.product-card, .category-card, .social-video-card').forEach(el => {
+        el.style.opacity = '0';
+        el.style.transform = 'translateY(30px)';
+        el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+        observer.observe(el);
+    });
+
+    // Search basic logic
+    const searchInput = document.querySelector('.search-bar input');
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            console.log('Searching for:', e.target.value);
+        });
+    }
+
+    // Add notification animation style
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes slideInNotify {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+    `;
+    document.head.appendChild(style);
+});
