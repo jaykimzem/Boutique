@@ -3,9 +3,9 @@
 // Get All Products API
 // =====================================================
 
-require_once __DIR__ . '/../../config/cors.php';
-require_once __DIR__ . '/../../config/database.php';
-require_once __DIR__ . '/../../utils/response.php';
+require_once __DIR__ . '/../../backend/config/cors.php';
+require_once __DIR__ . '/../../backend/config/database.php';
+require_once __DIR__ . '/../../backend/utils/response.php';
 
 // Only accept GET requests
 if ($_SERVER['REQUEST_METHOD'] !== 'GET') {

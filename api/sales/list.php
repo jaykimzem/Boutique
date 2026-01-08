@@ -3,10 +3,10 @@
 // Get Sales List API (Staff & Admin)
 // =====================================================
 
-require_once __DIR__ . '/../../config/cors.php';
-require_once __DIR__ . '/../../config/database.php';
-require_once __DIR__ . '/../../utils/response.php';
-require_once __DIR__ . '/../../middleware/auth.php';
+require_once __DIR__ . '/../../backend/config/cors.php';
+require_once __DIR__ . '/../../backend/config/database.php';
+require_once __DIR__ . '/../../backend/utils/response.php';
+require_once __DIR__ . '/../../backend/middleware/auth.php';
 
 // Only accept GET requests
 if ($_SERVER['REQUEST_METHOD'] !== 'GET') {

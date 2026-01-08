@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // 2. Fetch Product from API
     async function fetchProductDetails(id) {
         try {
-            const response = await fetch(`backend/api/products/list.php?active_only=true`);
+            const response = await fetch(`api/products/list.php?active_only=true`);
             const data = await response.json();
             if (data.success) {
                 const product = data.data.find(p => p.id == id);
@@ -262,7 +262,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 relatedProducts.appendChild(card);
             });
         }
-    });
+    }
+});
 
 // UI Interactions (Thumbnail, Size, Color, etc.)
 // ==============================================

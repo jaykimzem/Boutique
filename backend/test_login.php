@@ -100,7 +100,7 @@ echo "<br><br>";
 echo "<h3>Next Steps:</h3>";
 echo "<ol>";
 echo "<li>If password verification fails, run the SQL commands in the 'Fix' section below</li>";
-echo "<li>Visit <a href='http://localhost/Boutique/backend/api/auth/login.php'>Login API Test</a> (use POST request tool)</li>";
+echo "<li>Visit <a href='http://localhost/Boutique/api/auth/login.php'>Login API Test</a> (use POST request tool)</li>";
 echo "</ol>";
 
 echo "<h3>Fix SQL Commands (if needed):</h3>";

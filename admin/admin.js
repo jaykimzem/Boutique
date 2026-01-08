@@ -1,6 +1,6 @@
 // ===== Admin Portal JavaScript =====
 
-const API_BASE = '/Boutique/backend/api';
+const API_BASE = '../api';
 let authToken = null;
 let currentUser = null;
 let allProducts = [];

@@ -3,9 +3,9 @@
 // Image Upload API (Admin Only)
 // =====================================================
 
-require_once __DIR__ . '/../../config/cors.php';
-require_once __DIR__ . '/../../middleware/auth.php';
-require_once __DIR__ . '/../../utils/response.php';
+require_once __DIR__ . '/../../backend/config/cors.php';
+require_once __DIR__ . '/../../backend/middleware/auth.php';
+require_once __DIR__ . '/../../backend/utils/response.php';
 
 // Only accept POST requests
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -35,7 +35,7 @@ if ($file['size'] > $maxSize) {
 }
 
 // Create uploads directory if it doesn't exist
-$uploadDir = __DIR__ . '/../../../uploads/products/';
+$uploadDir = __DIR__ . '/../../backend/../uploads/products/';
 if (!file_exists($uploadDir)) {
     mkdir($uploadDir, 0755, true);
 }

@@ -113,7 +113,7 @@ if (typeof productsData === 'undefined') {
 
 async function fetchRealTimeProducts() {
     try {
-        const response = await fetch('backend/api/products/list.php?active_only=true');
+        const response = await fetch('api/products/list.php?active_only=true');
 
         // Ensure we got a JSON response
         const contentType = response.headers.get('content-type');
@@ -169,7 +169,7 @@ async function fetchPreorders() {
     if (!section || !grid) return;
 
     try {
-        const response = await fetch('backend/api/products/list.php?preorder_only=true');
+        const response = await fetch('api/products/list.php?preorder_only=true');
 
         const contentType = response.headers.get('content-type');
         if (!contentType || !contentType.includes('application/json')) {
