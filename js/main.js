@@ -114,6 +114,17 @@ if (typeof productsData === 'undefined') {
 async function fetchRealTimeProducts() {
     try {
         const response = await fetch('backend/api/products/list.php?active_only=true');
+
+        // Ensure we got a JSON response
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            const text = await response.text();
+            if (text.includes('<?php')) {
+                throw new Error('Server returned raw PHP code. Check Vercel configuration.');
+            }
+            throw new Error(`Expected JSON but got ${contentType || 'unknown content'}`);
+        }
+
         const data = await response.json();
         if (data.success) {
             // Transform backend data to match frontend expectations
@@ -159,6 +170,12 @@ async function fetchPreorders() {
 
     try {
         const response = await fetch('backend/api/products/list.php?preorder_only=true');
+
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            throw new Error('Non-JSON response received for pre-orders.');
+        }
+
         const data = await response.json();
 
         if (data.success && data.data.length > 0) {

@@ -3,10 +3,10 @@
 // Database Configuration
 // =====================================================
 
-define('DB_HOST', 'localhost');
-define('DB_NAME', 'boutique_db');
-define('DB_USER', 'root');
-define('DB_PASS', ''); // Default XAMPP password is empty
+define('DB_HOST', getenv('DB_HOST') ?: 'localhost');
+define('DB_NAME', getenv('DB_NAME') ?: 'boutique_db');
+define('DB_USER', getenv('DB_USER') ?: 'root');
+define('DB_PASS', getenv('DB_PASS') !== false ? getenv('DB_PASS') : ''); // Default XAMPP password is empty
 
 // Create database connection
 class Database {
