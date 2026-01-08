@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description"
-        content="Shop corporate wear for the modern African woman - power dressing, professional elegance">
+        content="Shop corporate wear for the modern professional African woman - premium blouses, suits, and dresses">
     <title>Corporate Wear | Luxe Kenya</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -14,7 +14,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="css/category.css">
-    <link rel="stylesheet" href="css/chatbot.css">
     <link rel="stylesheet" href="css/chatbot.css">
 </head>
 
@@ -40,7 +39,7 @@
                 <div class="nav-center">
                     <div class="search-bar">
                         <i class="fas fa-search"></i>
-                        <input type="text" placeholder="Search for styles, trends, vibes...">
+                        <input type="text" placeholder="Search for professional styles, blazers...">
                     </div>
                 </div>
 
@@ -89,7 +88,7 @@
         style="background-image: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.6)), url('https://images.unsplash.com/photo-1487222477894-8943e31ef7b2?w=1600');">
         <div class="hero-content">
             <h1 class="luxury-script">Corporate Wear</h1>
-            <p>Power dressing for the modern boss</p>
+            <p>Power dressing that commands respect in every boardroom</p>
         </div>
     </section>
 
@@ -101,7 +100,7 @@
                     <button class="filter-toggle" id="filterToggle">
                         <i class="fas fa-sliders-h"></i> Filters
                     </button>
-                    <span class="results-count">Showing 24 products</span>
+                    <span class="results-count">Loading products...</span>
                 </div>
                 <div class="filter-right">
                     <select class="sort-select">
@@ -109,42 +108,27 @@
                         <option>Price: Low to High</option>
                         <option>Price: High to Low</option>
                         <option>Newest First</option>
-                        <option>Most Popular</option>
                     </select>
                 </div>
             </div>
 
-            <!-- Filter Panel (Hidden by default on mobile) -->
-            <div class="filter-panel" id="filterPanel">
+            <!-- Filter Panel -->
+            <div class="filter-panel" id="filterPanel" style="display: none;">
                 <div class="filter-group">
                     <h4>Price Range</h4>
                     <div class="price-inputs">
                         <input type="number" placeholder="Min" value="0">
                         <span>-</span>
-                        <input type="number" placeholder="Max" value="50000">
+                        <input type="number" placeholder="Max" value="100000">
                     </div>
                 </div>
 
                 <div class="filter-group">
-                    <h4>Size</h4>
+                    <h4>Corporate Category</h4>
                     <div class="checkbox-group">
-                        <label><input type="checkbox"> XS</label>
-                        <label><input type="checkbox"> S</label>
-                        <label><input type="checkbox" checked> M</label>
-                        <label><input type="checkbox"> L</label>
-                        <label><input type="checkbox"> XL</label>
-                    </div>
-                </div>
-
-                <div class="filter-group">
-                    <h4>Color</h4>
-                    <div class="color-filter">
-                        <button class="color-filter-btn" style="background: #000;" title="Black"></button>
-                        <button class="color-filter-btn" style="background: #fff; border: 1px solid #ddd;"
-                            title="White"></button>
-                        <button class="color-filter-btn" style="background: #c5a059;" title="Gold"></button>
-                        <button class="color-filter-btn" style="background: #8b4513;" title="Brown"></button>
-                        <button class="color-filter-btn" style="background: #800020;" title="Burgundy"></button>
+                        <label><input type="checkbox"> Blazers</label>
+                        <label><input type="checkbox"> Formal Dresses</label>
+                        <label><input type="checkbox"> Suit Pants</label>
                     </div>
                 </div>
 
@@ -157,7 +141,10 @@
     <section class="products-section">
         <div class="container">
             <div class="products-grid" id="categoryProducts">
-                <!-- Products will be dynamically inserted -->
+                <div class="loading-state">
+                    <div class="spinner"></div>
+                    <p>Fetching your luxury collection...</p>
+                </div>
             </div>
         </div>
     </section>
@@ -190,33 +177,26 @@
                     <ul>
                         <li><a href="makeup.html">Makeup</a></li>
                         <li><a href="wigs.html">Wigs & Hair</a></li>
-                        <li><a href="makeup.html">Skincare</a></li>
-                        <li><a href="makeup.html">Beauty Kits</a></li>
                     </ul>
                 </div>
                 <div class="footer-col">
                     <h4>Contact</h4>
                     <ul>
                         <li><a href="#">About Us</a></li>
-                        <li><a href="#">Customer Service</a></li>
-                        <li><a href="#">Shipping Info</a></li>
                         <li><a href="#">Returns</a></li>
                     </ul>
                 </div>
             </div>
             <div class="footer-bottom">
-                <p>&copy; 2025 Anne's Fashion Line. All rights reserved.</p>
+                <p>&copy; 2026 Anne's Fashion Line. All rights reserved.</p>
             </div>
         </div>
     </footer>
 
-    <!-- WhatsApp Button Removed -->
-
-    <script src="https://js.puter.com/v2/"></script>
     <script src="js/products-data.js?v=2"></script>
-    <script src="js/puter.js?v=2"></script>
     <script src="js/main.js?v=2"></script>
     <script src="js/category.js?v=2"></script>
     <script src="js/chatbot.js?v=2"></script>
 </body>
+
 </html>

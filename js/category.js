@@ -3,17 +3,13 @@
 
 document.addEventListener('DOMContentLoaded', () => {
     const categoryGrid = document.getElementById('categoryProducts');
-
-    // Only run if we are on a category page with this grid
     if (!categoryGrid) return;
 
-    // 1. Determine Category from URL (Robust Check)
+    // 1. Determine Category from URL
     const currentUrl = window.location.href.toLowerCase();
     let currentCategory = '';
+    const categories = ['dresses', 'casual', 'corporate', 'shoes', 'wigs', 'makeup', 'weekend', 'beauty'];
 
-    const categories = ['dresses', 'casual', 'corporate', 'shoes', 'wigs', 'makeup', 'weekend'];
-
-    // Find which category keyword is in the URL
     for (const cat of categories) {
         if (currentUrl.includes(cat)) {
             currentCategory = cat;
@@ -22,48 +18,76 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (!currentCategory) {
-        console.warn('Could not determine category from URL:', currentUrl);
+        console.warn('Could not determine category from URL');
         return;
     }
 
-    console.log(`Current Category Detected: ${currentCategory}`);
-
-    // 2. Filter Products from Global Data
-    if (typeof productsData === 'undefined') {
-        console.error('Error: productsData not found. Ensure main.js is loaded first.');
-        return;
-    }
-
-    // Filter items that match the category
-    const filteredItems = productsData.filter(item => item.category === currentCategory);
-
-    // 3. Render Grid
-    // 3. Render Grid with Mixing
-    const renderCategory = (items) => {
+    // 2. Render Function
+    const renderItems = (data) => {
+        const filtered = data.filter(item => item.category === currentCategory);
         categoryGrid.innerHTML = '';
 
-        if (items.length > 0) {
-            // Apply Mixing if window.mixContent is available, otherwise just items
+        if (filtered.length > 0) {
             const contentToRender = window.mixContent && window.socialVideos
-                ? window.mixContent(items, window.socialVideos)
-                : items;
+                ? window.mixContent(filtered, window.socialVideos)
+                : filtered;
 
             if (window.renderProductGrid) {
                 window.renderProductGrid(categoryGrid, contentToRender);
-            } else {
-                console.warn('renderProductGrid not found, using basic render');
-                // Fallback (redundant if main.js is loaded, but safe)
             }
 
-            // Update results count
             const countEl = document.querySelector('.results-count');
             if (countEl) {
-                countEl.textContent = `Showing ${items.length} products`;
+                countEl.textContent = `Showing ${filtered.length} products`;
             }
         } else {
-            categoryGrid.innerHTML = '<p style="grid-column: 1/-1; text-align: center;">No products found in this category.</p>';
+            categoryGrid.innerHTML = '<p class="no-results">No products found in this category.</p>';
+            const countEl = document.querySelector('.results-count');
+            if (countEl) countEl.textContent = '0 products found';
         }
     };
 
-    renderCategory(filteredItems);
+    // 3. Initial or Event-driven Load
+    if (window.productsData && window.productsData.length > 0) {
+        renderItems(window.productsData);
+    }
+});
+
+document.addEventListener('productsLoaded', (e) => {
+    // We need to re-select the grid if it wasn't available during initial load
+    const categoryGrid = document.getElementById('categoryProducts');
+    if (categoryGrid) {
+        const currentUrl = window.location.href.toLowerCase();
+        let currentCategory = '';
+        const categories = ['dresses', 'casual', 'corporate', 'shoes', 'wigs', 'makeup', 'weekend', 'beauty'];
+
+        for (const cat of categories) {
+            if (currentUrl.includes(cat)) {
+                currentCategory = cat;
+                break;
+            }
+        }
+
+        if (currentCategory) {
+            const filtered = e.detail.filter(item => item.category === currentCategory);
+            categoryGrid.innerHTML = '';
+
+            if (filtered.length > 0) {
+                const contentToRender = window.mixContent && window.socialVideos
+                    ? window.mixContent(filtered, window.socialVideos)
+                    : filtered;
+
+                if (window.renderProductGrid) {
+                    window.renderProductGrid(categoryGrid, contentToRender);
+                }
+
+                const countEl = document.querySelector('.results-count');
+                if (countEl) countEl.textContent = `Showing ${filtered.length} products`;
+            } else {
+                categoryGrid.innerHTML = '<p class="no-results">No products found in this category.</p>';
+                const countEl = document.querySelector('.results-count');
+                if (countEl) countEl.textContent = '0 products found';
+            }
+        }
+    }
 });

@@ -1,7 +1,7 @@
 // AUTOMATICALLY GENERATED CATALOG - DO NOT EDIT MANUALLY
 // Generated on: 1/1/2026, 1:48:23 AM
 
-const productsData = [
+var productsData = [
     {
         "id": 45,
         "title": "Beach Casual Weekend",

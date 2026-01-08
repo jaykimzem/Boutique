@@ -156,6 +156,95 @@
         </div>
     </section>
 
+    <!-- Pre-order Section (Dynamic) -->
+    <section class="products-section preorder-section-compact" id="preorderSection"
+        style="display: none; background: var(--bg-card); padding: 40px 0;">
+        <div class="container">
+            <div class="section-header" style="margin-bottom: 20px;">
+                <span class="luxury-badge">Limited Time</span>
+                <h2 class="section-title" style="font-size: 1.5rem;">Pre-order Exclusives</h2>
+                <p class="section-subtitle">Secure these styles before they're gone</p>
+            </div>
+            <div class="preorder-scroll-container">
+                <div class="products-grid-mini horizontal-scroll" id="preorderGrid">
+                    <!-- Pre-order products will be dynamically inserted here -->
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <style>
+        .preorder-section-compact .products-grid-mini {
+            display: grid;
+            grid-auto-flow: column;
+            grid-auto-columns: calc(100% / 8 - 15px);
+            gap: 15px;
+            overflow-x: auto;
+            scroll-behavior: smooth;
+        }
+
+        @media (max-width: 1200px) {
+            .preorder-section-compact .products-grid-mini {
+                grid-auto-columns: calc(100% / 6 - 15px);
+            }
+        }
+
+        @media (max-width: 900px) {
+            .preorder-section-compact .products-grid-mini {
+                grid-auto-columns: calc(100% / 4 - 10px);
+            }
+        }
+
+        @media (max-width: 600px) {
+            .preorder-section-compact .products-grid-mini {
+                grid-auto-columns: calc(100% / 2 - 10px);
+            }
+        }
+
+        .preorder-section-compact .product-card {
+            border-radius: 8px;
+            overflow: hidden;
+            background: var(--bg-body);
+            transition: transform 0.3s ease;
+        }
+
+        .preorder-section-compact .product-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .preorder-section-compact .product-media {
+            height: 180px;
+        }
+
+        .preorder-section-compact .product-info {
+            padding: 10px;
+        }
+
+        .preorder-section-compact .product-title {
+            font-size: 0.85rem;
+            margin-bottom: 5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .preorder-section-compact .product-price {
+            font-size: 0.8rem;
+            margin-bottom: 8px;
+        }
+
+        .preorder-section-compact .btn-add-cart {
+            padding: 6px 10px;
+            font-size: 0.7rem;
+            width: 100%;
+        }
+
+        .preorder-scroll-container {
+            position: relative;
+            overflow: hidden;
+        }
+    </style>
+
     <!-- Featured Products Grid -->
     <section class="products-section">
         <div class="container">
@@ -178,7 +267,7 @@
                 <p class="section-subtitle">See how others are styling their looks</p>
             </div>
 
-            <div class="social-rail horizontal-scroll">
+            <div class="social-rail horizontal-scroll" id="socialRail">
                 <div class="social-video-card">
                     <video autoplay muted loop playsinline>
                         <source src="assets/instagram/videos/Dresses.mp4" type="video/mp4">

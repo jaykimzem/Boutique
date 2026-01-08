@@ -106,9 +106,121 @@ if (heroCarousel && heroSlides.length > 0 && dotsContainer) {
 // Product Data & Grid Generation
 // ========================================
 
-// Note: productsData is now loaded from js/products-data.js
+// Note: productsData is now fetched from the API for real-time sync
 if (typeof productsData === 'undefined') {
-    console.warn('productsData not found. Ensure js/products-data.js is loaded.');
+    var productsData = [];
+}
+
+async function fetchRealTimeProducts() {
+    try {
+        const response = await fetch('backend/api/products/list.php?active_only=true');
+        const data = await response.json();
+        if (data.success) {
+            // Transform backend data to match frontend expectations
+            productsData = data.data.map(p => ({
+                id: p.id,
+                title: p.title,
+                price: `KSh ${parseFloat(p.price).toLocaleString()}`,
+                image: p.image_url,
+                category: p.category,
+                type: 'product',
+                description: p.description,
+                stock: parseInt(p.total_stock) || 0,
+                allow_preorder: parseInt(p.allow_preorder) === 1
+            }));
+
+            // Re-render grids if they exist
+            const grid = document.getElementById('productsGrid');
+            const rail = document.getElementById('socialRail');
+
+            if (grid) {
+                const mixedItems = window.mixContent(productsData, window.socialVideos);
+                window.renderProductGrid(grid, mixedItems);
+            }
+            if (rail) {
+                renderSocialRail();
+            }
+
+            // Dispatch event for other scripts (like category.js)
+            document.dispatchEvent(new CustomEvent('productsLoaded', { detail: productsData }));
+
+            // Handle Pre-orders section on homepage
+            fetchPreorders();
+        }
+    } catch (error) {
+        console.error('Error fetching real-time products:', error);
+    }
+}
+
+async function fetchPreorders() {
+    const section = document.getElementById('preorderSection');
+    const grid = document.getElementById('preorderGrid');
+    if (!section || !grid) return;
+
+    try {
+        const response = await fetch('backend/api/products/list.php?preorder_only=true');
+        const data = await response.json();
+
+        if (data.success && data.data.length > 0) {
+            section.style.display = 'block';
+            grid.innerHTML = '';
+
+            data.data.forEach(p => {
+                const price = `KSh ${parseFloat(p.price).toLocaleString()}`;
+                const card = document.createElement('div');
+                card.className = 'product-card';
+                card.innerHTML = `
+                    <div class="product-media">
+                        <span class="luxury-badge" style="background: var(--accent-gold); color: #000;">Pre-order</span>
+                        <img src="${p.image_url}" alt="${p.title}" loading="lazy">
+                    </div>
+                    <div class="product-info">
+                        <h3 class="product-title">${p.title}</h3>
+                        <p class="product-price">${price}</p>
+                        <button class="btn-add-cart">
+                            <i class="fas fa-clock"></i> Pre-order Now
+                        </button>
+                    </div>
+                `;
+                card.addEventListener('click', (e) => {
+                    if (!e.target.closest('.btn-add-cart')) {
+                        window.location.href = `product-detail.html?id=${p.id}`;
+                    }
+                });
+                grid.appendChild(card);
+            });
+
+            startPreorderAutoScroll();
+        } else {
+            section.style.display = 'none';
+        }
+    } catch (error) {
+        console.error('Error fetching pre-orders:', error);
+        section.style.display = 'none';
+    }
+}
+
+let preorderScrollInterval;
+function startPreorderAutoScroll() {
+    const grid = document.getElementById('preorderGrid');
+    if (!grid) return;
+
+    if (preorderScrollInterval) clearInterval(preorderScrollInterval);
+
+    preorderScrollInterval = setInterval(() => {
+        const scrollAmount = grid.clientWidth * 0.8; // Scroll almost a full page
+        const isAtEnd = grid.scrollLeft + grid.clientWidth >= grid.scrollWidth - 50;
+
+        if (isAtEnd) {
+            grid.scrollTo({ left: 0, behavior: 'smooth' });
+        } else {
+            grid.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+        }
+    }, 5000); // 5 seconds pause
+
+    // Pause on hover
+    grid.onmouseenter = () => clearInterval(preorderScrollInterval);
+    grid.onmouseleave = startPreorderAutoScroll;
 }
 
 // 1. Define Social Videos Globally
@@ -196,19 +308,15 @@ window.renderProductGrid = function (container, items) {
     });
 };
 
-// Render Products Grid (Homepage)
-const productsGrid = document.getElementById('productsGrid');
-if (productsGrid && typeof productsData !== 'undefined') {
-    const mixedItems = window.mixContent(productsData, window.socialVideos);
-    window.renderProductGrid(productsGrid, mixedItems);
-}
+// Initial fetch
+fetchRealTimeProducts();
 
-// Render Social Videos Rail (Homepage)
-const socialRail = document.querySelector('.social-rail');
-if (socialRail && typeof productsData !== 'undefined') {
+function renderSocialRail() {
+    if (!socialRail) return;
     socialRail.innerHTML = '';
-    const socialItems = productsData.filter(item => item.type === 'social');
-    socialItems.slice(0, 8).forEach(item => {
+    // We can still use some static product items for the social rail if needed, 
+    // or just show the social videos.
+    window.socialVideos.slice(0, 8).forEach(item => {
         const card = document.createElement('div');
         card.className = 'social-video-card';
         card.innerHTML = `
@@ -225,6 +333,7 @@ if (socialRail && typeof productsData !== 'undefined') {
         socialRail.appendChild(card);
     });
 }
+renderSocialRail();
 
 // ========================================
 // Wardrobe Functionality

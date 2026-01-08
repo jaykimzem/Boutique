@@ -3,192 +3,227 @@
 document.addEventListener('DOMContentLoaded', () => {
     console.log('Product Detail Page Initializing...');
 
-    // 0. Verify Data Availability
-    if (typeof productsData === 'undefined') {
-        console.error('CRITICAL: productsData is undefined. main.js might not be loaded.');
-        alert('System Error: Product data not loaded. Please refresh or contact support.');
-        return;
-    }
-
-    // 1. Get Product ID from URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const rawId = urlParams.get('id');
-    const productId = parseInt(rawId);
-
-    console.log(`URL ID: ${rawId}, Parsed ID: ${productId}`);
-
-    // HIDE STATIC CONTENT to strictly prevent default data from showing
-    const detailSection = document.getElementById('productInfoDetail');
-    const errorSection = document.getElementById('productNotFoundError');
-    if (detailSection) detailSection.style.visibility = 'hidden';
-    if (errorSection) errorSection.style.display = 'none';
-
-    if (!rawId) {
-        console.warn('No Product ID in URL.');
-        if (errorSection) errorSection.style.display = 'block';
-        return;
-    }
-
-    // 2. Find Product in Global Data
-    const product = productsData.find(p => p.id == productId);
-
-    if (product) {
-        console.log('Product Found:', product);
-
-        // 3. Update Visuals
-        document.title = `${product.title} | Anne's Fashion Line`;
-
-        // Main Image
-        const mainImage = document.getElementById('mainProductImage');
-        if (mainImage) {
-            mainImage.src = product.image;
-            mainImage.alt = product.title;
-        }
-
-        // Thumbnails
-        const thumbContainer = document.getElementById('thumbnailContainer');
-        if (thumbContainer) {
-            thumbContainer.innerHTML = ''; // Clear
-            // For now, we use the main image as a thumbnail. 
-            // In a real CMS, this would be an array: product.galleryImages
-            const images = [product.image];
-            images.forEach((imgSrc, index) => {
-                const img = document.createElement('img');
-                img.src = imgSrc;
-                img.alt = `View ${index + 1}`;
-                img.className = `thumbnail ${index === 0 ? 'active' : ''}`;
-                img.addEventListener('click', () => {
-                    document.querySelectorAll('.thumbnail').forEach(t => t.classList.remove('active'));
-                    img.classList.add('active');
-                    if (mainImage) mainImage.src = imgSrc;
-                });
-                thumbContainer.appendChild(img);
-            });
-        }
-
-        // Text Content
-        const titleEl = document.querySelector('.product-title-main');
-        if (titleEl) titleEl.textContent = product.title;
-
-        const priceEl = document.querySelector('.product-price-main');
-        if (priceEl) priceEl.textContent = product.price;
-
-        const descEl = document.querySelector('.product-description');
-        if (descEl) {
-            descEl.textContent = product.description || `Shop the exclusive ${product.title} from our ${product.category} collection. Premium quality and style, curated just for you.`;
-        }
-
-        // Dynamic Sizes
-        const sizeContainer = document.getElementById('sizeSelector');
-        if (sizeContainer && product.sizes) {
-            sizeContainer.innerHTML = ''; // Clear hardcoded
-            product.sizes.forEach((size, index) => {
-                const btn = document.createElement('button');
-                btn.className = `size-btn ${index === 0 ? 'active' : ''}`;
-                btn.textContent = size;
-                btn.addEventListener('click', () => {
-                    sizeContainer.querySelectorAll('.size-btn').forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
-                });
-                sizeContainer.appendChild(btn);
-            });
-        }
-
-        // Dynamic Colors
-        const colorContainer = document.getElementById('colorSelector');
-        if (colorContainer && product.colors) {
-            colorContainer.innerHTML = ''; // Clear hardcoded
-            product.colors.forEach((color, index) => {
-                const btn = document.createElement('button');
-                btn.className = `color-btn ${index === 0 ? 'active' : ''}`;
-                btn.style.backgroundColor = color.toLowerCase();
-                btn.title = color;
-                btn.addEventListener('click', () => {
-                    colorContainer.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
-                });
-                colorContainer.appendChild(btn);
-            });
-        }
-
-        // Breadcrumbs
-        const breadcrumbCategory = document.querySelector('#productBreadcrumb a:nth-child(2)');
-        const breadcrumbTitle = document.querySelector('#productBreadcrumb span');
-
-        if (breadcrumbCategory) {
-            breadcrumbCategory.textContent = product.category.charAt(0).toUpperCase() + product.category.slice(1);
-            breadcrumbCategory.href = `${product.category}.html`;
-        }
-        if (breadcrumbTitle) breadcrumbTitle.textContent = product.title;
-
-        // Meta
-        const metaContainer = document.getElementById('productMeta');
-        if (metaContainer) {
-            metaContainer.innerHTML = `
-                <p><strong>SKU:</strong> LK-${product.category.substring(0, 2).toUpperCase()}-${product.id}</p>
-                <p><strong>Category:</strong> ${product.category.charAt(0).toUpperCase() + product.category.slice(1)}</p>
-            `;
-        }
-
-        // Update "Add to Wardrobe" Button Logic
-        const addBtn = document.querySelector('.btn-add-to-cart');
-        if (addBtn) {
-            const newBtn = addBtn.cloneNode(true);
-            addBtn.parentNode.replaceChild(newBtn, addBtn);
-            newBtn.addEventListener('click', () => {
-                if (typeof addToWardrobe === 'function') {
-                    addToWardrobe(product.id);
+    // 2. Fetch Product from API
+    async function fetchProductDetails(id) {
+        try {
+            const response = await fetch(`backend/api/products/list.php?active_only=true`);
+            const data = await response.json();
+            if (data.success) {
+                const product = data.data.find(p => p.id == id);
+                if (product) {
+                    renderProduct(product);
                 } else {
-                    console.log('Add to Wardrobe: ', product.title);
+                    showError();
                 }
-            });
+
+                // Set global productsData for related products logic
+                window.productsData = data.data.map(p => ({
+                    id: p.id,
+                    title: p.title,
+                    price: `KSh ${parseFloat(p.price).toLocaleString()}`,
+                    image: p.image_url,
+                    category: p.category,
+                    type: 'product',
+                    description: p.description
+                }));
+                loadRelatedProducts(id);
+            }
+        } catch (error) {
+            console.error('Error fetching product:', error);
+            showError();
         }
+    }
 
-        // REVEAL CONTENT: Data loaded successfully
-        if (detailSection) detailSection.style.visibility = 'visible';
-
-    } else {
+    function showError() {
         console.error(`Product ID ${productId} NOT found in catalog.`);
         if (errorSection) errorSection.style.display = 'block';
     }
 
-    // 4. Load Related Products (Random selection excluding current)
-    // 4. Load Related Products (2 Products + 1 Video)
-    const relatedProducts = document.getElementById('relatedProducts');
-    if (relatedProducts) {
-        relatedProducts.innerHTML = ''; // Clear hardcoded defaults
+    function renderProduct(productData) {
+        // Transform backend data
+        const product = {
+            id: productData.id,
+            title: productData.title,
+            price: `KSh ${parseFloat(productData.price).toLocaleString()}`,
+            image: productData.image_url,
+            category: productData.category,
+            description: productData.description,
+            stock: parseInt(productData.total_stock) || 0,
+            allow_preorder: parseInt(productData.allow_preorder) === 1,
+            sizes: ["S", "M", "L", "XL"], // Default sizes
+            colors: ["Default"] // Default color
+        };
 
-        // Social Videos Source
-        const socialVideos = [
-            { type: 'social', videoUrl: 'assets/instagram/videos/Lifestyle Casual.mp4', likes: '1.2K', comments: '234' },
-            { type: 'social', videoUrl: 'assets/instagram/videos/Weekend Lifestyle.mp4', likes: '890', comments: '156' },
-            { type: 'social', videoUrl: 'assets/instagram/videos/Dresses.mp4', likes: '2.1K', comments: '345' },
-            { type: 'social', videoUrl: 'assets/instagram/videos/Casual Weekend Club.mp4', likes: '1.5K', comments: '289' },
-            { type: 'social', videoUrl: 'assets/instagram/videos/Heels Casual Date Club.mp4', likes: '3.2K', comments: '420' },
-            { type: 'social', videoUrl: 'assets/instagram/videos/Jeans Casual Weekend.mp4', likes: '1.8K', comments: '190' }
-        ];
+        console.log('Rendering Product:', product);
 
-        // Filter out current product
-        const availableProducts = productsData.filter(p =>
-            p.type === 'product' && p.id !== productId
-        );
+        if (product) {
+            console.log('Product Found:', product);
 
-        // Pick 2 Random Products
-        const shuffledProducts = availableProducts.sort(() => 0.5 - Math.random());
-        const selectedProducts = shuffledProducts.slice(0, 2);
+            // 3. Update Visuals
+            document.title = `${product.title} | Anne's Fashion Line`;
 
-        // Pick 1 Random Video
-        const randomVideo = socialVideos[Math.floor(Math.random() * socialVideos.length)];
+            // Main Image
+            const mainImage = document.getElementById('mainProductImage');
+            if (mainImage) {
+                mainImage.src = product.image;
+                mainImage.alt = product.title;
+            }
 
-        // Combine: P, P, V
-        const mix = [...selectedProducts, randomVideo];
+            // Thumbnails
+            const thumbContainer = document.getElementById('thumbnailContainer');
+            if (thumbContainer) {
+                thumbContainer.innerHTML = ''; // Clear
+                // For now, we use the main image as a thumbnail. 
+                // In a real CMS, this would be an array: product.galleryImages
+                const images = [product.image];
+                images.forEach((imgSrc, index) => {
+                    const img = document.createElement('img');
+                    img.src = imgSrc;
+                    img.alt = `View ${index + 1}`;
+                    img.className = `thumbnail ${index === 0 ? 'active' : ''}`;
+                    img.addEventListener('click', () => {
+                        document.querySelectorAll('.thumbnail').forEach(t => t.classList.remove('active'));
+                        img.classList.add('active');
+                        if (mainImage) mainImage.src = imgSrc;
+                    });
+                    thumbContainer.appendChild(img);
+                });
+            }
 
-        mix.forEach(item => {
-            const card = document.createElement('div');
+            // Text Content
+            const titleEl = document.querySelector('.product-title-main');
+            if (titleEl) titleEl.textContent = product.title;
 
-            if (item.type === 'product') {
-                card.className = 'product-card';
-                card.innerHTML = `
+            const priceEl = document.querySelector('.product-price-main');
+            if (priceEl) priceEl.textContent = product.price;
+
+            const descEl = document.querySelector('.product-description');
+            if (descEl) {
+                descEl.textContent = product.description || `Shop the exclusive ${product.title} from our ${product.category} collection. Premium quality and style, curated just for you.`;
+            }
+
+            // Dynamic Sizes
+            const sizeContainer = document.getElementById('sizeSelector');
+            if (sizeContainer && product.sizes) {
+                sizeContainer.innerHTML = ''; // Clear hardcoded
+                product.sizes.forEach((size, index) => {
+                    const btn = document.createElement('button');
+                    btn.className = `size-btn ${index === 0 ? 'active' : ''}`;
+                    btn.textContent = size;
+                    btn.addEventListener('click', () => {
+                        sizeContainer.querySelectorAll('.size-btn').forEach(b => b.classList.remove('active'));
+                        btn.classList.add('active');
+                    });
+                    sizeContainer.appendChild(btn);
+                });
+            }
+
+            // Dynamic Colors
+            const colorContainer = document.getElementById('colorSelector');
+            if (colorContainer && product.colors) {
+                colorContainer.innerHTML = ''; // Clear hardcoded
+                product.colors.forEach((color, index) => {
+                    const btn = document.createElement('button');
+                    btn.className = `color-btn ${index === 0 ? 'active' : ''}`;
+                    btn.style.backgroundColor = color.toLowerCase();
+                    btn.title = color;
+                    btn.addEventListener('click', () => {
+                        colorContainer.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active'));
+                        btn.classList.add('active');
+                    });
+                    colorContainer.appendChild(btn);
+                });
+            }
+
+            // Breadcrumbs
+            const breadcrumbCategory = document.querySelector('#productBreadcrumb a:nth-child(2)');
+            const breadcrumbTitle = document.querySelector('#productBreadcrumb span');
+
+            if (breadcrumbCategory) {
+                breadcrumbCategory.textContent = product.category.charAt(0).toUpperCase() + product.category.slice(1);
+                breadcrumbCategory.href = `${product.category}.html`;
+            }
+            if (breadcrumbTitle) breadcrumbTitle.textContent = product.title;
+
+            // Meta
+            const metaContainer = document.getElementById('productMeta');
+            if (metaContainer) {
+                metaContainer.innerHTML = `
+                <p><strong>SKU:</strong> ${productData.sku || `LK-${product.category.substring(0, 2).toUpperCase()}-${product.id}`}</p>
+                <p><strong>Category:</strong> ${product.category.charAt(0).toUpperCase() + product.category.slice(1)}</p>
+                <p><strong>Stock Status:</strong> ${product.stock > 0 ? `<span style="color:#4CAF50">${product.stock} in stock</span>` : (product.allow_preorder ? '<span style="color:var(--accent-gold)">Available for Pre-order</span>' : '<span style="color:#f44336">Out of Stock</span>')}</p>
+            `;
+            }
+
+            // Update "Add to Wardrobe" Button Logic
+            const addBtn = document.querySelector('.btn-add-to-cart');
+            if (addBtn) {
+                const newBtn = addBtn.cloneNode(true);
+                addBtn.parentNode.replaceChild(newBtn, addBtn);
+
+                if (product.stock <= 0 && !product.allow_preorder) {
+                    newBtn.innerHTML = '<i class="fas fa-times-circle"></i> Out of Stock';
+                    newBtn.disabled = true;
+                    newBtn.style.opacity = '0.5';
+                    newBtn.style.cursor = 'not-allowed';
+                } else {
+                    if (product.stock <= 0 && product.allow_preorder) {
+                        newBtn.innerHTML = '<i class="fas fa-clock"></i> Pre-order Now';
+                    }
+                    newBtn.addEventListener('click', () => {
+                        if (typeof addToWardrobe === 'function') {
+                            addToWardrobe(product.id);
+                        } else {
+                            console.log('Add to Wardrobe: ', product.title);
+                        }
+                    });
+                }
+            }
+
+            // REVEAL CONTENT: Data loaded successfully
+            if (detailSection) detailSection.style.visibility = 'visible';
+        }
+
+        // Call initial fetch
+        fetchProductDetails(productId);
+
+        // 4. Load Related Products (2 Products + 1 Video)
+        function loadRelatedProducts(currentId) {
+            const relatedProducts = document.getElementById('relatedProducts');
+            if (!relatedProducts) return;
+            relatedProducts.innerHTML = '';
+
+            // Social Videos Source
+            const socialVideos = [
+                { type: 'social', videoUrl: 'assets/instagram/videos/Lifestyle Casual.mp4', likes: '1.2K', comments: '234' },
+                { type: 'social', videoUrl: 'assets/instagram/videos/Weekend Lifestyle.mp4', likes: '890', comments: '156' },
+                { type: 'social', videoUrl: 'assets/instagram/videos/Dresses.mp4', likes: '2.1K', comments: '345' },
+                { type: 'social', videoUrl: 'assets/instagram/videos/Casual Weekend Club.mp4', likes: '1.5K', comments: '289' },
+                { type: 'social', videoUrl: 'assets/instagram/videos/Heels Casual Date Club.mp4', likes: '3.2K', comments: '420' },
+                { type: 'social', videoUrl: 'assets/instagram/videos/Jeans Casual Weekend.mp4', likes: '1.8K', comments: '190' }
+            ];
+
+            // Filter out current product
+            const availableProducts = window.productsData.filter(p =>
+                p.type === 'product' && p.id !== currentId
+            );
+
+            // Pick 2 Random Products
+            const shuffledProducts = availableProducts.sort(() => 0.5 - Math.random());
+            const selectedProducts = shuffledProducts.slice(0, 2);
+
+            // Pick 1 Random Video
+            const randomVideo = socialVideos[Math.floor(Math.random() * socialVideos.length)];
+
+            // Combine: P, P, V
+            const mix = [...selectedProducts, randomVideo];
+
+            mix.forEach(item => {
+                const card = document.createElement('div');
+
+                if (item.type === 'product') {
+                    card.className = 'product-card';
+                    card.innerHTML = `
                     <div class="product-media">
                         <img src="${item.image}" alt="${item.title}" loading="lazy">
                     </div>
@@ -200,17 +235,17 @@ document.addEventListener('DOMContentLoaded', () => {
                         </button>
                     </div>
                 `;
-                // Navigation click
-                card.addEventListener('click', (e) => {
-                    if (!e.target.closest('.btn-add-cart')) {
-                        window.location.href = `product-detail.html?id=${item.id}`;
-                    }
-                });
-            } else {
-                // Video Card
-                card.className = 'product-card social-insert';
-                card.style.gridRow = 'span 1';
-                card.innerHTML = `
+                    // Navigation click
+                    card.addEventListener('click', (e) => {
+                        if (!e.target.closest('.btn-add-cart')) {
+                            window.location.href = `product-detail.html?id=${item.id}`;
+                        }
+                    });
+                } else {
+                    // Video Card
+                    card.className = 'product-card social-insert';
+                    card.style.gridRow = 'span 1';
+                    card.innerHTML = `
                     <div class="product-media" style="height: 100%;">
                         <video autoplay muted loop playsinline style="width: 100%; height: 100%; object-fit: cover;">
                             <source src="${item.videoUrl}" type="video/mp4">
@@ -223,11 +258,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>
                     </div>
                 `;
-            }
-            relatedProducts.appendChild(card);
-        });
-    }
-});
+                }
+                relatedProducts.appendChild(card);
+            });
+        }
+    });
 
 // UI Interactions (Thumbnail, Size, Color, etc.)
 // ==============================================
